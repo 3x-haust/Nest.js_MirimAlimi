@@ -1,0 +1,65 @@
+# 컴파일된 출력
+/dist
+/node_modules
+
+# 로그
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# 테스트
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# 환경 변수 파일
+.env
+.env.*
+!.env.example
+
+# Firebase
+serviceAccountKey.json
+firebase-debug.log
+.firebase/
+
+# NestJS
+/.nestjs_repl_history
+
+# 빌드 파일
+*.tsbuildinfo
+
+# 임시 파일
+tmp/
+temp/
+
+# 의존성
+package-lock.json
+yarn.lock
+
+# 기타
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
