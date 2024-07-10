@@ -21,7 +21,11 @@ export class FirebaseAuthGuard implements CanActivate {
       request['user'] = decodedToken;
       return true;
     } catch {
-      throw new UnauthorizedException();
+      request.res.status(403).json({
+        status: 403,
+        timestamp: new Date().toISOString(),
+        message: 'Access Denied',
+      });
     }
   }
 

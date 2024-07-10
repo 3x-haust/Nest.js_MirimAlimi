@@ -12,6 +12,14 @@ export class AuthController {
     return this.authService.getUserRole(uid);
   }
 
+  @Get('setUserRole')
+  @UseGuards(FirebaseAuthGuard)
+  async setUserRole(@Query('uid') uid: string, @Query('role') role: string) {
+    console.log(uid, role);
+    await this.authService.setUserRole(uid, role);
+    return { status: 200, message: 'User role set successfully' };
+  }
+
   @Get('createCustomToken')
   async createCustomToken(@Query('uid') uid: string): Promise<string> {
     return this.authService.createCustomToken(uid);
@@ -20,13 +28,5 @@ export class AuthController {
   @Get('verifyToken')
   async verifyToken(@Query('token') token: string) {
     return this.authService.verifyToken(token);
-  }
-
-  @Get('setUserRole')
-  @UseGuards(FirebaseAuthGuard)
-  async setUserRole(@Query('uid') uid: string, @Query('role') role: string) {
-    console.log(uid, role);
-    await this.authService.setUserRole(uid, role);
-    return { message: 'User role set successfully' };
   }
 }

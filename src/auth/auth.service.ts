@@ -1,26 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import axios from 'axios';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 @Injectable()
 export class AuthService {
+  constructor() {}
+
   async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
+    if (token === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       const decodedToken = await admin.auth().verifyIdToken(token, true);
 
-      const user = await this.getUserByUid(decodedToken.uid);
-      if (
-        decodedToken.auth_time * 1000 <
-        new Date(user.tokensValidAfterTime).getTime()
-      ) {
-        throw new Error('Token is outdated. Please re-authenticate.');
-      }
-
       return decodedToken;
     } catch (error) {
-      throw new Error('Invalid token');
+      throw new HttpException(
+        {
+          status: 401,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid token',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
@@ -28,11 +41,29 @@ export class AuthService {
     try {
       return await admin.auth().getUser(uid);
     } catch (error) {
-      throw new Error('User not found');
+      throw new HttpException(
+        {
+          status: 404,
+          timestamp: new Date().toISOString(),
+          message: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
   async createCustomToken(uid: string): Promise<string> {
+    if (uid === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       const customToken = await admin.auth().createCustomToken(uid);
 
@@ -46,30 +77,83 @@ export class AuthService {
 
       return response.data.idToken;
     } catch (error) {
-      console.error('Error creating custom token:', error);
-      throw new Error('Error creating custom token');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error creating custom token',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async setCustomUserClaims(uid: string, claims: object): Promise<void> {
+    if (uid === undefined || claims === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       await admin.auth().setCustomUserClaims(uid, claims);
     } catch (error) {
-      throw new Error('Error setting custom claims');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error setting custom claims',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async setUserRole(uid: string, role: string): Promise<void> {
+    if (uid === undefined || role === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       await admin.firestore().collection('users').doc(uid).update({ role });
       await this.setCustomUserClaims(uid, { role });
       await this.revokeRefreshTokens(uid);
     } catch (error) {
-      throw new Error('Error setting user role');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error setting user role',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async getUserRole(uid: string): Promise<string | null> {
+    if (uid === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       const userDoc = await admin
         .firestore()
@@ -78,15 +162,40 @@ export class AuthService {
         .get();
       return userDoc.exists ? userDoc.data().role : null;
     } catch (error) {
-      throw new Error('Error getting user role');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error getting user role',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async revokeRefreshTokens(uid: string): Promise<void> {
+    if (uid === undefined) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       await admin.auth().revokeRefreshTokens(uid);
     } catch (error) {
-      throw new Error('Error revoking refresh tokens');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error revoking refresh tokens',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -96,6 +205,22 @@ export class AuthService {
     role: string,
     classRef: admin.firestore.DocumentReference,
   ): Promise<string> {
+    if (
+      email === undefined ||
+      name === undefined ||
+      role === undefined ||
+      classRef === undefined
+    ) {
+      throw new HttpException(
+        {
+          status: 400,
+          timestamp: new Date().toISOString(),
+          message: 'Invalid input data',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       const userRecord = await admin.auth().createUser({
         email,
@@ -114,7 +239,16 @@ export class AuthService {
 
       return userRecord.uid;
     } catch (error) {
-      throw new Error('Error creating user');
+      throw new HttpException(
+        {
+          status: 500,
+          timestamp: new Date().toISOString(),
+          message: 'Error creating user',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
+
+export default AuthService;
